@@ -1,40 +1,28 @@
 import { connect } from 'cloudflare:sockets';
-// t.me/P_tech2024
-// How to generate your own UUID:
-// [Windows] Press "Win + R", input cmd and run:  Powershell -NoExit -Command "[guid]::NewGuid()"
+
 let userID = '78829655-59f6-466b-897d-ea351d4ec82b';
 
-const proxyIPs = [
-  'mtn.ircf.space',
-  'mkh.ircf.space',
-  'mci.ircf.space',
-  'rtl.ircf.space',
-];
-let proxyIP = proxyIPs[Math.floor(Math.random() * proxyIPs.length)];
+// const proxyIPs = [
+//   // 'mtn.ircf.space',
+//   // 'mkh.ircf.space',
+//   // 'mci.ircf.space',
+//   // 'rtl.ircf.space',
+// ];
+let proxyIP = []; //proxyIPs[Math.floor(Math.random() * proxyIPs.length)];
 
-let dohURL = 'https://1.1.1.1/dns-query';
+let dohURL = 'https://dns.google/dns-query'; //'https://1.1.1.1/dns-query';
 // (dohURL) list :
 // https://cloudflare-dns.com/dns-query
 // https://dns.google/dns-query
 // https://sky.rethinkdns.com/1:-Pf_____9_8A_AMAIgE8kMABVDDmKOHTAKg=
 // https://free.shecan.ir/dns-query        <--- دی ان اس ایرانی
 
-// v2board api environment variables (optional)
-// now deprecated, please use planetscale.com instead
-let nodeId = ''; // 1
-
-let apiToken = ''; //abcdefghijklmnopqrstuvwxyz123456
-
-let apiHost = ''; // api.v2board.com
-
-if (!isValidUUID(userID)) {
-  throw new Error('uuid is invalid');
-}
+if (!isValidUUID(userID)) throw new Error('uuid is invalid');
 
 export default {
   /**
    * @param {import("@cloudflare/workers-types").Request} request
-   * @param {{UUID: string, PROXYIP: string, DNS_RESOLVER_URL: string, NODE_ID: int, API_HOST: string, API_TOKEN: string}} env
+   * @param {{UUID: string, PROXYIP: string, DNS_RESOLVER_URL: string}} env
    * @param {import("@cloudflare/workers-types").ExecutionContext} ctx
    * @returns {Promise<Response>}
    */
@@ -43,23 +31,21 @@ export default {
       userID = env.UUID || userID;
       proxyIP = env.PROXYIP || proxyIP;
       dohURL = env.DNS_RESOLVER_URL || dohURL;
-      nodeId = env.NODE_ID || nodeId;
-      apiToken = env.API_TOKEN || apiToken;
-      apiHost = env.API_HOST || apiHost;
+
       let userID_Path = userID;
       if (userID.includes(',')) {
         userID_Path = userID.split(',')[0];
       }
+
       const upgradeHeader = request.headers.get('Upgrade');
+
       if (!upgradeHeader || upgradeHeader !== 'websocket') {
         const url = new URL(request.url);
         switch (url.pathname) {
           case '/cf':
             return new Response(JSON.stringify(request.cf, null, 4), {
               status: 200,
-              headers: {
-                'Content-Type': 'application/json;charset=utf-8',
-              },
+              headers: { 'Content-Type': 'application/json;charset=utf-8' },
             });
           case '/connect': // for test connect to cf socket
             const [hostname, port] = ['cloudflare.com', '80'];
@@ -108,39 +94,6 @@ export default {
             } catch (connectError) {
               return new Response(connectError.message, { status: 500 });
             }
-          case `/${userID_Path}`: {
-            const vlConfig = getVLConfig(
-              userID,
-              request.headers.get('Host')
-            );
-            return new Response(`${vlConfig}`, {
-              status: 200,
-              headers: {
-                'Content-Type': 'text/html; charset=utf-8',
-              },
-            });
-          }
-          case `/sub/${userID_Path}`: {
-            const url = new URL(request.url);
-            const searchParams = url.searchParams;
-            let vlConfig = createVLSub(
-              userID,
-              request.headers.get('Host')
-            );
-
-            // If 'format' query param equals to 'clash', convert config to base64
-            if (searchParams.get('format') === 'clash') {
-              vlConfig = btoa(vlConfig);
-            }
-
-            // Construct and return response object
-            return new Response(vlConfig, {
-              status: 200,
-              headers: {
-                'Content-Type': 'text/plain;charset=utf-8',
-              },
-            });
-          }
 
           default:
             // return new Response('Not found', { status: 404 });
@@ -309,10 +262,7 @@ async function handleTCPOutBound(
    */
   async function connectAndWrite(address, port) {
     /** @type {import("@cloudflare/workers-types").Socket} */
-    const tcpSocket = connect({
-      hostname: address,
-      port: port,
-    });
+    const tcpSocket = connect({ hostname: address, port: port });
     remoteSocket.value = tcpSocket;
     log(`connected to ${address}:${port}`);
     const writer = tcpSocket.writable.getWriter();
