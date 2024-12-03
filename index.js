@@ -2,15 +2,16 @@ import { connect } from 'cloudflare:sockets';
 
 let userID = '78829655-59f6-466b-897d-ea351d4ec82b';
 
-// const proxyIPs = [
-//   // 'mtn.ircf.space',
-//   // 'mkh.ircf.space',
-//   // 'mci.ircf.space',
-//   // 'rtl.ircf.space',
-// ];
-let proxyIP = []; //proxyIPs[Math.floor(Math.random() * proxyIPs.length)];
+const proxyIPs = [
+  'mtn.ircf.space',
+  'mkh.ircf.space',
+  'mci.ircf.space',
+  'rtl.ircf.space',
+];
+let proxyIP = proxyIPs[Math.floor(Math.random() * proxyIPs.length)];
 
-let dohURL = 'https://dns.google/dns-query'; //'https://1.1.1.1/dns-query';
+// let dohURL = 'https://dns.google/dns-query'; //'https://1.1.1.1/dns-query';
+let dohURL = 'https://1.1.1.1/dns-query';
 // (dohURL) list :
 // https://cloudflare-dns.com/dns-query
 // https://dns.google/dns-query
